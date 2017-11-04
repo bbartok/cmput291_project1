@@ -1,4 +1,6 @@
+#Created by Brendan Bartok on 2017-11-03
 #!/usr/bin/env python3
+
 import sqlite3, time, os, getpass, sys
 
 from customer import *

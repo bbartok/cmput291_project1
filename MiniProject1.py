@@ -1,6 +1,4 @@
-#Created by Brendan Bartok on 2017-11-03
 #!/usr/bin/env python3
-
 import sqlite3, time, os, getpass, sys
 
 from customer import *
@@ -24,30 +22,41 @@ def main():
     if database[-2:] != 'db':                       #makes sure that the db file is of correct filetype
     	print('Invalid File Type')
     	return
+
+    print('Welcome. What would you like to do?')
+    print('1. Login as Agent')
+    print('2. Login as Customer')
+    print('3. Exit')
+
     
         
-    acc_type = input('Agent or Customer: ').lower() #User chooses wether they are logging in as agent or customer
+    acc_type = input('> ') #User chooses wether they are logging in as agent or customer or to exit
     
     ##########################################################################
     # Loop checks if User entered appropriate response i.e Agent or Customer
     ##########################################################################
-    while acc_type != 'agent' and acc_type != 'customer':
+    while acc_type != '1' and acc_type != '2':
    
-        if acc_type != 'exit':
+        if acc_type != '3':
             print('Invalid Login Type')
             time.sleep(1.2)
             os.system('clear')
-            acc_type = input('Agent or Customer: ').lower()
+            print('Welcome. What would you like to do?')
+            print('1. Login as Agent')
+            print('2. Login as Customer')
+            print('3. Exit')
+            acc_type = input('> ')
         else:
+            os.system('clear')
             return
 
     os.system('clear')                             #clears the terminal in preperation for login screens
     
-    if acc_type == 'customer':                      #transitions to customer login screen
+    if acc_type == '2':                      #transitions to customer login screen
         customer(database)                          #database parameter is the filename for the database
         
 
-    elif acc_type == 'agent':                       #transitions to to agent screen
+    elif acc_type == '1':                       #transitions to to agent screen
         failed_attempt = 0                          #initializes variable for use for max login attempts
         agent_login(failed_attempt,database)        #parameters are amount of failed login attempts and db filename
 
@@ -100,6 +109,8 @@ def login_customer(failed_attempt, database):
         customer_session = Customer_Session(database)   #if the user credentials were correct, initializes Customer Session
         customer_session.start_session(cid)             #starts session
         customer_session.close()                        #closes session to ensure databse is no longer in use
+        os.system('clear')
+        main()
     else:
         print('Username or Password was Incorrect')
         failed += 1
@@ -178,6 +189,8 @@ def agent_login(failed_attempt, database):
         agent_session = Agent_Session(database)
         agent_session.start_session(aid)
         agent_session.close()
+        os.system('clear')
+        main()
 
 
 if __name__ == '__main__':

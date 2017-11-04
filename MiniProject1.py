@@ -38,13 +38,13 @@ def main():
     while acc_type != '1' and acc_type != '2':
    
         if acc_type != '3':
-            print('Invalid Login Type')
-            time.sleep(1.2)
+            
             os.system('clear')
             print('Welcome. What would you like to do?')
             print('1. Login as Agent')
             print('2. Login as Customer')
             print('3. Exit')
+            print('Invalid Login Type')
             acc_type = input('> ')
         else:
             os.system('clear')

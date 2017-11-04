@@ -1,4 +1,8 @@
+#!/usr/bin/env python3
 import sqlite3, time, os, getpass, sys
+
+from customer import *
+from Agent import *
 from loginClass import *
 from agentLoginClass import *
 os.system('clear')

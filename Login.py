@@ -3,10 +3,6 @@ from loginClass import *
 os.system('clear')
 
 def main():
-
-    connection = sqlite3.connect('./database.db')
-    cursor = connection.cursor()
-    cursor.execute('PRAGMA foreign_keys=ON;')
         
     acc_type = input('Agent or Customer: ').lower()
     
@@ -30,7 +26,7 @@ def main():
         agent_login()
 
 
-def customer_login():
+def customer():
     print('What would you like to do?')
     print('1. Login with existing account')
     print('2. Create Customer Account')
@@ -49,13 +45,29 @@ def customer_login():
     os.system('clear')
     
     if cus_choice == 1:
-        cid = input('Username: ')
-        pwd = getpass.getpass('Password(hidden):')
+        failed_attempt = 0
+        login(failed_attempt)
 
     else:
         account_create()
         
-        
+def login_customer(failed_attempt):
+    failed = failed_attempt
+    if failed_attempt == 5:
+        print('Too many failed attempts. GoodBye')
+        return
+    cid = input('Username: ')
+    pwd = getpass.getpass('Password(hidden):')
+    validate = Customer()
+    valid_bool = validate.validate_session(cid,pwd)
+    if valid_bool == True:
+        customer_session = Customer_Session()
+        customer_session.start_session(cid)
+        customer_session.close()
+    else:
+        print('Username or Password was Incorrect')
+        failed += 1
+        login(failed)
 
 def account_create():
 

@@ -4,6 +4,26 @@ import sqlite3
 from utils import *
 from pretty_table import PrettyTable
 
+
+class Display:
+    '''
+    For easier management of UI.
+    '''
+    def __init__(self):
+        self.buf = []
+
+    def show(self):
+        clear_screen()
+        for each in self.buf:
+            print(each)
+
+    def add(self, content):
+        self.buf.append(content)
+
+    def refresh(self):
+        self.buf = []
+
+
 class Customer_Session:
     def __init__(self, database):
         self.cid = None
@@ -27,7 +47,7 @@ class Customer_Session:
             print ('4. Logout')
             choice = input('> ')
             if choice == '1':
-                self.search_for_prodects()
+                self.search_for_products()
             elif choice == '2':
                 self.place_an_order()
             elif choice == '3':
@@ -40,37 +60,11 @@ class Customer_Session:
                 break
             clear_screen()
 
-    # def sql_search_keyword(self, keywords):
-        # query = 'select pid, name, unit, count(name) from ( '
-        # subqueries = []
-        # for kwd in keywords:
-            # if not kwd.isalpha():
-                # print('Error: illegal character found in keywords')
-                # return None
-            # subqueries.append(' select * from products'
-                    # ' where name like \'%{}%\''.format(kwd))
-        # query = query + ' union all'.join(subqueries) + \
-                # ' )group by name order by count(name) desc;'
-        # self.cursor.execute(query)
-        # return self.cursor.fetchall()
-
-    # def sql_search_keyword(self, keywords):
-        # patterns = []
-        # for kwd in keywords:
-            # patterns.append('%{}%'.format(kwd))
-        # query = 'SELECT pid, name, unit, COUNT(name) FROM (' + \
-                # ' UNION ALL '.join(
-                        # 'SELECT * FROM products WHERE name LIKE ?' for \
-                                # _ in keywords
-                        # ) \
-                # + ') GROUP BY name ORDER BY COUNT(name) DESC;'
-        # self.cursor.execute(query, patterns)
-        # return self.cursor.fetchall()
-
-
-    # def print_product(self, products):
-
-    def search_for_prodects(self):
+    def search_for_products(self):
+        '''
+        Main function 1: Customer can search for products
+        '''
+        display = Display()
         while True:
             clear_screen()
             print('Please enter keywords:')
@@ -133,9 +127,10 @@ class Customer_Session:
                 underline = ['-'*len(s) for s in col_name]
                 table.writeLine(col_name)
                 table.writeLine(underline)
+
+                # Product a table to show the result:
                 products = []
                 for row in product_detail:
-                    # pid, name, unit, ncarry, nstock, pcarry, pstock = row
                     row = list(row)
                     pid = row[0]
                     norder = 0
@@ -145,21 +140,18 @@ class Customer_Session:
                     row.append(norder)
                     products.append(row)
                     table.writeLine([str(r) for r in row])
+                display.add(table)
 
                 while True:
-                    clear_screen()
-                    print(table)
+                    display.show()
                     print('What would you like to do next?')
                     print('1. See product details')
                     print('2. Go back')
                     option = input('> ')
-                    clear_screen()
-                    print(table)
                     if option == '1':
                         available_pids = [str(p) for p in list(zip(*products))[0]]
                         while True:
-                            clear_screen()
-                            print(table)
+                            display.show()
                             print('Please select a product ID (type nothing to go back):')
                             selection = input('> ')
                             if selection == '':
@@ -172,6 +164,9 @@ class Customer_Session:
                 break
 
     def see_product_details(self, pid):
+        '''
+        Helper function
+        '''
         self.cursor.execute(
                 '''
                 SELECT products.name, products.unit, categories.name,
@@ -185,15 +180,6 @@ class Customer_Session:
                 (pid, )
         )
         product_detail = self.cursor.fetchall()
-        # self.cursor.execute(
-                # '''
-                # SELECT s.pid, stores.name, carries.uprice, carries.qty, stores.sid
-                # FROM search_result s, carries, stores
-                # WHERE s.pid = carries.pid
-                    # AND carries.sid = stores.sid;
-                # '''
-        # )
-        # store_detail = self.cursor.fetchall()
         self.cursor.execute(
                 '''
                 SELECT sid, COUNT(DISTINCT olines.oid)
@@ -215,6 +201,10 @@ class Customer_Session:
         detail_table.writeLine(underline)
         detail_table.writeLine([str(pid)] + [str(s) for s in list(product_detail[0])[:3]])
 
+        display = Display()
+        display.add(detail_table)
+        display.add('\nAvailable in the following stores:\n')
+
         store_table = PrettyTable(5)
         col_name = ['Select', 'Store', 'Price', 'Quantities Left',
                 'Num. of Orders in 7 days']
@@ -234,43 +224,41 @@ class Customer_Session:
             store_table.writeLine([str(s) for s in row])
             i += 1
 
+        display.add(store_table)
 
         while True:
-            clear_screen()
-            print(detail_table)
-            print('\nAvailable in the following stores:\n')
-            print(store_table)
+            display.show()
             print('What would you like to do next?')
             print('1. Add to cart')
             print('2. Go back')
             option = input('> ')
-            clear_screen()
             if option == '1':
                 while True:
-                    print(detail_table)
-                    print('\nAvailable in the following stores:\n')
-                    print(store_table)
+                    display.show()
                     print('Please select the from the above list (type nothing to give up):')
                     selection = input('> ')
                     if selection == '':
                         break
-                    elif int(selection) > 0 and int(selection) <= len(selector):
-                        self.add_to_cart(pid, selector[int(selection)-1])
-                        break
+                    elif selection.isdigit():
+                        if int(selection) > 0 and int(selection) <= len(selector):
+                            self.add_to_cart(pid, selector[int(selection)-1], display)
+                            break
             elif option == '2':
                 return
 
-    def add_to_cart(self, pid, sid):
+    def add_to_cart(self, pid, sid, parent_display):
+        display = Display()
         for cart_pid, cart_sid, _ in self.cart:
             if cart_pid == pid and cart_sid == sid:
-                clear_screen()
-                print('This item already in your cart.')
+                display.add('This item already in your cart.')
+                display.show()
                 print('1. Go back')
                 while True:
                     option = input('> ')
                     if option == '1':
                         return
         while True:
+            parent_display.show()
             print('How many units would you want to buy? (default: 1)')
             option = input('> ')
             if option == '':
@@ -278,20 +266,20 @@ class Customer_Session:
                 break
             elif option.isdigit():
                 qty = int(option)
+                if qty == 0:
+                    display.add('Cancelled.')
+                    display.show()
+                    print('1. Go back')
+                    while True:
+                        option = input('> ')
+                        if option == '1':
+                            return
                 break
-            elif option == '0':
-                print('Cancelled.')
-                print('1. Go back')
-                while True:
-                    option = input('> ')
-                    if option == '1':
-                        return
-            else:
-                print('Input error, you should type a number.')
 
         self.cart.append([pid, sid, qty])
-        clear_screen()
-        print('Item(s) added successfully.')
+        display.refresh()
+        display.add('Item(s) added successfully.')
+        display.show()
         print('1. Go back')
         while True:
             option = input('> ')
@@ -299,7 +287,18 @@ class Customer_Session:
                 return
 
     def place_an_order(self):
-        pass
+        display = Display()
+        if len(self.cart) == 0:
+            display.add('Your cart is empty.')
+            display.show()
+            while True:
+                print('1. Go back')
+                option = input('> ')
+                if option == '1':
+                    return
+        else:
+            pass
+
 
     def list_orders(self):
         pass

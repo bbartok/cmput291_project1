@@ -82,6 +82,7 @@ class Customer_Session:
                         print('Error: illegal character found in keywords')
                         continue
 
+                # TODO: bug, result doesn't in ordered
                 self.cursor.execute(
                         'CREATE VIEW search_result AS ' + \
                         'SELECT pid, name, unit, COUNT(name) FROM ( ' + \
@@ -115,6 +116,11 @@ class Customer_Session:
                         '''
                 )
                 product_orders = self.cursor.fetchall()
+                self.cursor.execute(
+                        '''
+                        DROP VIEW search_result;
+                        '''
+                )
 
                 # TODO: if result contains more than 5 lines...
                 table = PrettyTable(8)
@@ -143,44 +149,49 @@ class Customer_Session:
                     print(table)
                     print('What would you like to do next?')
                     print('1. See product details')
-                    print('2. Add product to cart')
-                    print('3. Go back')
+                    print('2. Go back')
                     option = input('> ')
                     clear_screen()
                     print(table)
                     if option == '1':
-                        self.see_product_details()
+                        available_pids = [str(p) for p in list(zip(*products))[0]]
+                        while True:
+                            clear_screen()
+                            print(table)
+                            print('Please select a product ID (type nothing to go back):')
+                            selection = input('> ')
+                            if selection == '':
+                                break
+                            elif selection in available_pids:
+                                self.see_product_details(selection)
                     elif option == '2':
-                        self.add_to_cart(products)
-                    elif option == '3':
                         break
 
-                self.cursor.execute(
-                        '''
-                        DROP VIEW search_result;
-                        '''
-                )
                 break
 
-    def see_product_details(self):
+    def see_product_details(self, pid):
         self.cursor.execute(
                 '''
-                SELECT s.pid, s.name, s.unit, c.name
-                FROM search_result s, products p, categories c
-                WHERE s.pid = p.pid
-                    AND p.cat = c.cat;
-                '''
+                SELECT products.name, products.unit, categories.name,
+                    stores.name, carries.uprice, carries.qty, stores.sid
+                FROM products, categories, carries, stores
+                WHERE products.cat = categories.cat
+                    AND products.pid = carries.pid
+                    AND carries.sid = stores.sid
+                    AND products.pid = ?;
+                ''',
+                (pid, )
         )
         product_detail = self.cursor.fetchall()
-        self.cursor.execute(
-                '''
-                SELECT s.pid, stores.name, carries.uprice, carries.qty, stores.sid
-                FROM search_result s, carries, stores
-                WHERE s.pid = carries.pid
-                    AND carries.sid = stores.sid;
-                '''
-        )
-        store_detail = self.cursor.fetchall()
+        # self.cursor.execute(
+                # '''
+                # SELECT s.pid, stores.name, carries.uprice, carries.qty, stores.sid
+                # FROM search_result s, carries, stores
+                # WHERE s.pid = carries.pid
+                    # AND carries.sid = stores.sid;
+                # '''
+        # )
+        # store_detail = self.cursor.fetchall()
         self.cursor.execute(
                 '''
                 SELECT sid, COUNT(DISTINCT olines.oid)
@@ -195,38 +206,50 @@ class Customer_Session:
         for sid, norder in orders:
             orders_d[sid] = norder
 
-        table = PrettyTable(8)
-        col_name = ['Product ID', 'Product Name', 'Unit',
-                'Category', 'Available In', 'Unit Price', 'Quantities Left',
-                'Num. of Orders Past 7 Days']
+        detail_table = PrettyTable(4)
+        col_name = ['Product ID', 'Product Name', 'Unit', 'Category']
         underline = ['-'*len(s) for s in col_name]
-        table.writeLine(col_name)
-        table.writeLine(underline)
+        detail_table.writeLine(col_name)
+        detail_table.writeLine(underline)
+        detail_table.writeLine([str(pid)] + [str(s) for s in list(product_detail[0])[:3]])
+
+        store_table = PrettyTable(5)
+        col_name = ['Select', 'Store', 'Price', 'Quantities Left',
+                'Num. of Orders in 7 days']
+        underline = ['-'*len(s) for s in col_name]
+        store_table.writeLine(col_name)
+        store_table.writeLine(underline)
+
+        i = 1
         for product_row in product_detail:
             product_row = list(product_row)
-            pivot_row = True
-            for store_row in store_detail:
-                store_row = list(store_row)
-                if product_row[0] == store_row[0]:
-                    sid = store_row[-1]
-                    norders = orders_d[sid] if sid in orders_d else 0
-                    if pivot_row:
-                        row = product_row + store_row[1:-1] + [norders]
-                    else:
-                        row = [' ' for _ in product_row] + store_row[1:-1] + [norders]
-                    table.writeLine([str(s) for s in row])
-                    pivot_row = False
+            sid = product_row[-1]
+            norders = orders_d[sid] if sid in orders_d else 0
+            row = [i] + product_row[3:-1] + [norders]
+            store_table.writeLine([str(s) for s in row])
+            i += 1
 
-        clear_screen()
-        print(table)
 
         while True:
+            clear_screen()
+            print(detail_table)
+            print('\nAvailable in the following stores:\n')
+            print(store_table)
             print('What would you like to do next?')
-            print('1. Go back')
+            print('1. Add to cart')
+            print('2. Go back')
             option = input('> ')
             clear_screen()
-            print(table)
             if option == '1':
+                while True:
+                    print(detail_table)
+                    print('\nAvailable in the following stores:\n')
+                    print(store_table)
+                    print('Please select the from the above list (type nothing to give up):')
+                    selection = input('> ')
+                    if selection == '':
+                        break
+            elif option == '2':
                 return
 
     def add_to_cart(self, products):

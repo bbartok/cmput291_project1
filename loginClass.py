@@ -3,11 +3,11 @@ import sqlite3
 
 class Customer:
 
-    def __init__(self):
+    def __init__(self, database):
         
         self.cid        = None
         self.pwd        = None
-        self.connection = sqlite3.connect('./database.db')
+        self.connection = sqlite3.connect(database)
         self.cursor     = self.connection.cursor()
         
         self.cursor.execute('PRAGMA foreign_keys=ON;')
@@ -23,8 +23,11 @@ class Customer:
         self.cursor.execute(valid_query, params)
         queryResult  = self.cursor.fetchall()
         try:
-            valid_cid, valid_pwd = queryResult.split('|')[0]
-        except ValueError:
+            valid_cid = queryResult[0][0]
+            valid_pwd = queryResult[0][1]
+        except ValueError and IndexError:
+            self.connection.commit()
+            self.connection.close()
             return Valid_bool
 
         if valid_cid == self.cid:

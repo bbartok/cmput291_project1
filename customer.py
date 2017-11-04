@@ -16,6 +16,7 @@ class Customer_Session:
         Main interface, called from login system
         """
         self.cid = cid
+        self.cart = []
         clear_screen()
         print ('Customer session started.')
         while True:
@@ -34,6 +35,7 @@ class Customer_Session:
             elif choice == '4':
                 print ('Logging you out, have a nice day!')
                 self.cid = None
+                self.cart = []
                 print ('Customer session ended.')
                 break
             clear_screen()
@@ -221,11 +223,14 @@ class Customer_Session:
         store_table.writeLine(underline)
 
         i = 1
+        selector = []
         for product_row in product_detail:
             product_row = list(product_row)
             sid = product_row[-1]
             norders = orders_d[sid] if sid in orders_d else 0
-            row = [i] + product_row[3:-1] + [norders]
+            store_name, price, qty, sid = product_row[3:]
+            row = [i, store_name, price, qty, norders]
+            selector.append(sid)
             store_table.writeLine([str(s) for s in row])
             i += 1
 
@@ -249,11 +254,49 @@ class Customer_Session:
                     selection = input('> ')
                     if selection == '':
                         break
+                    elif int(selection) > 0 and int(selection) <= len(selector):
+                        self.add_to_cart(pid, selector[int(selection)-1])
+                        break
             elif option == '2':
                 return
 
-    def add_to_cart(self, products):
-        pass
+    def add_to_cart(self, pid, sid):
+        for cart_pid, cart_sid, _ in self.cart:
+            if cart_pid == pid and cart_sid == sid:
+                clear_screen()
+                print('This item already in your cart.')
+                print('1. Go back')
+                while True:
+                    option = input('> ')
+                    if option == '1':
+                        return
+        while True:
+            print('How many units would you want to buy? (default: 1)')
+            option = input('> ')
+            if option == '':
+                qty = 1
+                break
+            elif option.isdigit():
+                qty = int(option)
+                break
+            elif option == '0':
+                print('Cancelled.')
+                print('1. Go back')
+                while True:
+                    option = input('> ')
+                    if option == '1':
+                        return
+            else:
+                print('Input error, you should type a number.')
+
+        self.cart.append([pid, sid, qty])
+        clear_screen()
+        print('Item(s) added successfully.')
+        print('1. Go back')
+        while True:
+            option = input('> ')
+            if option == '1':
+                return
 
     def place_an_order(self):
         pass

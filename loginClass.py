@@ -3,11 +3,11 @@ import sqlite3
 
 class Customer:
 
-    def __init__(self):
+    def __init__(self, database):
         
         self.cid        = None
         self.pwd        = None
-        self.connection = sqlite3.connect('./database.db')
+        self.connection = sqlite3.connect(database)
         self.cursor     = self.connection.cursor()
         
         self.cursor.execute('PRAGMA foreign_keys=ON;')

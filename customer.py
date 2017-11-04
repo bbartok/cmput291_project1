@@ -5,25 +5,6 @@ from utils import *
 from pretty_table import PrettyTable
 
 
-class Display:
-    '''
-    For easier management of UI.
-    '''
-    def __init__(self):
-        self.buf = []
-
-    def show(self):
-        clear_screen()
-        for each in self.buf:
-            print(each)
-
-    def add(self, content):
-        self.buf.append(content)
-
-    def refresh(self):
-        self.buf = []
-
-
 class Customer_Session:
     def __init__(self, database):
         self.cid = None
@@ -438,7 +419,48 @@ class Customer_Session:
                     return
 
     def list_orders(self):
-        pass
+        display = Display()
+        self.cursor.execute(
+                '''
+                SELECT orders.oid, odate, COUNT(pid), SUM(uprice * qty)
+                FROM orders, olines
+                WHERE orders.oid = olines.oid
+                    AND cid = ?
+                GROUP BY orders.oid
+                ORDER BY odate DESC;
+                ''',
+                (self.cid, )
+                )
+        orders = self.cursor.fetchall()
+
+        if len(orders) == 0:
+            display.add('You don\'t have any order.')
+            diaplay.add('1. Go back')
+            while True:
+                display.show()
+                if input('> ') == '1':
+                    return
+
+        else:
+            # TODO: more than 5 results...
+            table = PrettyTable(4)
+            col_name = ['Order ID', 'Order Date', 'Num. of Products', 'Total Price']
+            underline = ['-'*len(s) for s in col_name]
+            table.writeLine(col_name)
+            table.writeLine(underline)
+            for each in orders:
+                table.writeLine([str(s) for s in each])
+            display.add(table)
+            display.add('What would you like to do?')
+            display.add('1. See order detail')
+            display.add('2. Go back')
+            while True:
+                display.show()
+                option = input('> ')
+                if option == '1':
+                    pass
+                elif option == '2':
+                    return
 
     def close(self):
         """

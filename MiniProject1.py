@@ -1,4 +1,6 @@
+#Created by Brendan Bartok on 2017-11-03
 #!/usr/bin/env python3
+
 import sqlite3, time, os, getpass, sys
 
 from customer import *
@@ -171,8 +173,11 @@ def agent_login(failed_attempt, database):
         print('If you do not have an account, please see System Admin or Login as Customer')
         failed += 1
         agent_login(failed, database)
-    
-
+        
+    else:
+        agent_session = Agent_Session(database)
+        agent_session.start_session(aid)
+        agent_session.close()
 
 
 if __name__ == '__main__':

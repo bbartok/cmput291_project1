@@ -111,7 +111,7 @@ def login_customer(failed_attempt, database):
 
 def account_create(database):
 
-    create_account = Customer(database)
+    create_account = Customer(database)                 #initializes class that speaks to db
     
     pwd = None
     print('Please Enter The Following Information')
@@ -119,44 +119,50 @@ def account_create(database):
         
     firstName = input('First Name: ')
     lastName  = input('Last Name: ')
-    name      = firstName + ' ' + lastName
+    name      = firstName + ' ' + lastName                          #concatenates first and last name into single variable
     address   = input('Address: ')
     while True:
-        pwd1      = getpass.getpass('Password: ')
-        pwd2      = getpass.getpass('Please Re-Enter Password: ')
-        if pwd1 != pwd2:
+        pwd1      = getpass.getpass('Password: ')                   #first password entry
+        pwd2      = getpass.getpass('Please Re-Enter Password: ')   #second password entry
+        if pwd1 != pwd2:                                            #checks if pwd1 and pwd2 don't match, then gets them to reenter
             os.system('clear')
-            print('PASSWORDS DID NOT MATCH')
-            print('Username: '+cid)
-            print('First Name: '+firstName)
-            print('Last Name: '+lastName)
+            print('PASSWORDS DID NOT MATCH')                        ####################################################################
+            print('Username: '+cid)                                 #variables cid, firstname, lastname and address are printed in order
+            print('First Name: '+firstName)                         # to maintain cleanliness and continuity
+            print('Last Name: '+lastName)                           ####################################################################
             print('Address: '+address)
             continue
         else:
-            pwd = pwd1
-            break  
+            pwd = pwd1                                              #if pwd1 and pwd2 match, sets pwd to pwd1
+            break                                                   #breaks out of while loop
     
-    check_fail = create_account.add_customer(cid,name,address,pwd)
-    if check_fail == True:
+    check_fail = create_account.add_customer(cid,name,address,pwd)  #check_fail boolean to see if cid is already ued
+    if check_fail == True:                                          #if cid i taken , gets user to re sign up
         print('cid already taken')
         time.sleep(2)
         account_create(database)
     else:
-        print('Thanks for Creating an Account. Redirecting To Customer Selection Screen')
+        print('Thanks for Creating an Account. Redirecting To Customer Selection Screen')       #re-direction message
         time.sleep(1)
         os.system('clear')
         customer(database)
         
-            
+###################################
+# Function to validate agents login
+###################################
 
 def agent_login(failed_attempt, database):
     failed = failed_attempt
-    validate = Agent(database)
+    validate = Agent(database)                  #intilializes Agent object
     Valid_bool = False
-    aid = input('Username: ')
+    aid = input('Username: ')                   #Gets users aid and pwd
     pwd = getpass.getpass('Password(hidden):')
-    Valid_bool = validate.validate_agent(aid, pwd)
-    if Valid_bool == False:
+    Valid_bool = validate.validate_agent(aid, pwd)  #validates that aid and pwd are correct
+    ###############################################################################################################################
+    # remainder of lines notifies user that their aid or pwd are incorrect, then lets them know that if they dont have an account
+    # they should get in contact with System Admin to creat account
+    ###############################################################################################################################
+    if Valid_bool == False:          
         print('Username or Password was incorrect')
         print('If you do not have an account, please see System Admin or Login as Customer')
         failed += 1

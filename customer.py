@@ -5,9 +5,9 @@ from utils import *
 from pretty_table import PrettyTable
 
 class Customer_Session:
-    def __init__(self):
+    def __init__(self, database):
         self.cid = None
-        self.connection = sqlite3.connect('./database.db')
+        self.connection = sqlite3.connect(database)
         self.cursor = self.connection.cursor()
         self.cursor.execute('PRAGMA foreign_keys=ON;')
 
@@ -137,20 +137,21 @@ class Customer_Session:
                     row.append(norder)
                     products.append(row)
                     table.writeLine([str(r) for r in row])
-                print(table)
 
                 while True:
+                    clear_screen()
+                    print(table)
                     print('What would you like to do next?')
                     print('1. See product details')
                     print('2. Add product to cart')
-                    print('3. Return to previous page')
+                    print('3. Go back')
                     option = input('> ')
                     clear_screen()
                     print(table)
                     if option == '1':
                         self.see_product_details()
                     elif option == '2':
-                        pass
+                        self.add_to_cart(products)
                     elif option == '3':
                         break
 
@@ -173,25 +174,63 @@ class Customer_Session:
         product_detail = self.cursor.fetchall()
         self.cursor.execute(
                 '''
-                SELECT s.pid, st.name, c.uprice, c.qty, COUNT(DISTINCT od.oid)
-                FROM search_result s, carries c, stores st, olines ol, orders od
-                WHERE s.pid = c.pid
-                    AND c.sid = st.sid
-                    AND c.sid = ol.sid
-                    AND s.pid = ol.pid
-                    AND ol.oid = od.oid
-                    AND od.odate >= (SELECT DATE('now', '-7 day'))
-                GROUP BY c.sid;
+                SELECT s.pid, stores.name, carries.uprice, carries.qty, stores.sid
+                FROM search_result s, carries, stores
+                WHERE s.pid = carries.pid
+                    AND carries.sid = stores.sid;
                 '''
         )
         store_detail = self.cursor.fetchall()
-        clear_screen()
-        print(product_detail)
-        print(store_detail)
-        # table = PrettyTable(8)
-        # col_name = []
-        # for 
+        self.cursor.execute(
+                '''
+                SELECT sid, COUNT(DISTINCT olines.oid)
+                FROM olines, orders
+                WHERE olines.oid = orders.oid
+                    AND orders.odate >= (SELECT DATE('now', '-7 day'))
+                GROUP BY sid;
+                '''
+        )
+        orders = self.cursor.fetchall()
+        orders_d = {}
+        for sid, norder in orders:
+            orders_d[sid] = norder
 
+        table = PrettyTable(8)
+        col_name = ['Product ID', 'Product Name', 'Unit',
+                'Category', 'Available In', 'Unit Price', 'Quantities Left',
+                'Num. of Orders Past 7 Days']
+        underline = ['-'*len(s) for s in col_name]
+        table.writeLine(col_name)
+        table.writeLine(underline)
+        for product_row in product_detail:
+            product_row = list(product_row)
+            pivot_row = True
+            for store_row in store_detail:
+                store_row = list(store_row)
+                if product_row[0] == store_row[0]:
+                    sid = store_row[-1]
+                    norders = orders_d[sid] if sid in orders_d else 0
+                    if pivot_row:
+                        row = product_row + store_row[1:-1] + [norders]
+                    else:
+                        row = [' ' for _ in product_row] + store_row[1:-1] + [norders]
+                    table.writeLine([str(s) for s in row])
+                    pivot_row = False
+
+        clear_screen()
+        print(table)
+
+        while True:
+            print('What would you like to do next?')
+            print('1. Go back')
+            option = input('> ')
+            clear_screen()
+            print(table)
+            if option == '1':
+                return
+
+    def add_to_cart(self, products):
+        pass
 
     def place_an_order(self):
         pass
@@ -207,7 +246,7 @@ class Customer_Session:
         self.connection.close()
 
 def test():
-    customer_session = Customer_Session()
+    customer_session = Customer_Session('./database.db')
     customer_session.start_session('yan')
     customer_session.close()
 

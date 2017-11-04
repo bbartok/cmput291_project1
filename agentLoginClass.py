@@ -2,9 +2,9 @@ import sqlite3
 
 class Agent:
 
-    def __init__(self):
+    def __init__(self,database):
 
-        self.connection = sqlite3.connect('./database.db')
+        self.connection = sqlite3.connect(database)
         self.cursor = self.connection.cursor()
         self.cursor.execute('PRAGMA foreign_keys=ON;')
 

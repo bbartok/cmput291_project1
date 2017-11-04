@@ -7,12 +7,16 @@ def main():
 
     try:
         database = sys.argv[1]
+        testconnection = sqlite3.connect(database)
+        testconnection.close()
     except IndexError:
         print('Missing Database File')
         return
+    
     if database[-2:] != 'db':
-        print('invalid database file')
-        return
+    	print('Invalid File Type')
+    	return
+    
         
     acc_type = input('Agent or Customer: ').lower()
     
@@ -34,7 +38,7 @@ def main():
 
     elif acc_type == 'agent':
         failed_attempt = 0
-        agent_login(failed_attempt)
+        agent_login(failed_attempt,database)
 
 
 def customer(database):
@@ -73,7 +77,7 @@ def login_customer(failed_attempt, database):
     validate = Customer(database)
     valid_bool = validate.validate_session(cid,pwd)
     if valid_bool == True:
-        customer_session = Customer_Session(database)
+        customer_session = Customer_session(database)
         customer_session.start_session(cid)
         customer_session.close()
     else:

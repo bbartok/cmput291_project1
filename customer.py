@@ -106,13 +106,6 @@ class Customer_Session:
                         'Num. of Stores Carry', 'Num. of Stores In Stock',
                         'Min. Price Carry', 'Min. Price In Stock',
                         'Num. of Orders Past 7 Days'])
-                # col_name = ['Product ID', 'Product Name', 'Unit',
-                        # 'Num. of Stores Carry', 'Num. of Stores In Stock',
-                        # 'Min. Price Carry', 'Min. Price In Stock',
-                        # 'Num. of Orders Past 7 Days']
-                # underline = ['-'*len(s) for s in col_name]
-                # table.writeLine(col_name)
-                # table.writeLine(underline)
 
                 # Product a table to show the result:
                 products = []
@@ -186,11 +179,7 @@ class Customer_Session:
         # Show product detail:
         display = Display()
         detail_table = PrettyTable(4)
-        # col_name = ['Product ID', 'Product Name', 'Unit', 'Category']
-        # underline = ['-'*len(s) for s in col_name]
         detail_table.addLabel(['Product ID', 'Product Name', 'Unit', 'Category'])
-        # detail_table.writeLine(col_name)
-        # detail_table.writeLine(underline)
         detail_table.writeLine([str(pid)] + [str(s) for s in list(product_detail[0])[:3]])
 
         display.add(detail_table)
@@ -200,13 +189,6 @@ class Customer_Session:
         store_table = PrettyTable(5)
         store_table.addLabel(['Select', 'Store', 'Price', 'Quantities Left',
                  'Num. of Orders in 7 days'])
-        # col_name = ['Select', 'Store', 'Price', 'Quantities Left',
-                # 'Num. of Orders in 7 days']
-        # underline = ['-'*len(s) for s in col_name]
-        # store_table.writeLine(['Select', 'Store', 'Price', 'Quantities Left',
-                # 'Num. of Orders in 7 days'])
-        # store_table.writeLine(col_name)
-        # store_table.writeLine(underline)
         i = 1
         selector = []
         for product_row in product_detail:
@@ -359,10 +341,6 @@ class Customer_Session:
             # Generate a summary table:
             summary = PrettyTable(4)
             summary.addLabel(['Product Name', 'Store', 'Quantity', 'Subtotal'])
-            # col_name = ['Product Name', 'Store', 'Quantity', 'Subtotal']
-            # underline = ['-'*len(s) for s in col_name]
-            # summary.writeLine(col_name)
-            # summary.writeLine(underline)
             total = 0.0
             for cart_item in self.cart:
                 pid, sid, product_name, store_name, price, qty = cart_item
@@ -459,10 +437,6 @@ class Customer_Session:
             # TODO: more than 5 results...
             table = PrettyTable(4)
             table.addLabel(['Order ID', 'Order Date', 'Num. of Products', 'Total Price'])
-            # col_name = ['Order ID', 'Order Date', 'Num. of Products', 'Total Price']
-            # underline = ['-'*len(s) for s in col_name]
-            # table.writeLine(col_name)
-            # table.writeLine(underline)
             valid_oids = []
             for each in orders:
                 valid_oids.append(str(each[0]))
@@ -528,11 +502,6 @@ class Customer_Session:
                 order_detail = PrettyTable(4)
                 order_detail.addLabel(['Tracking Number', 'Pickup Time',
                         'Dropoff Time', 'Address'])
-                # col_name = ['Tracking Number', 'Pickup Time',
-                        # 'Dropoff Time', 'Address']
-                # underline = ['-'*len(s) for s in col_name]
-                # order_detail.writeLine(col_name)
-                # order_detail.writeLine(underline)
                 if len(deliveries) == 0:
                     order_detail.writeLine(
                             ['N/A', 'N/A', 'N/A', address]
@@ -546,11 +515,6 @@ class Customer_Session:
                 product_table = PrettyTable(7)
                 product_table.addLabel(['Store ID', 'Store Name', 'Product ID',
                         'Product Name', 'Quantity', 'Unit', 'Price'])
-                # col_name = ['Store ID', 'Store Name', 'Product ID',
-                        # 'Product Name', 'Quantity', 'Unit', 'Price']
-                # underline = ['-'*len(s) for s in col_name]
-                # product_table.writeLine(col_name)
-                # product_table.writeLine(underline)
                 for line in details:
                     product_table.writeLine(
                             [str(s) for s in line]

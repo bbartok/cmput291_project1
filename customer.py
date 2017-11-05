@@ -286,6 +286,8 @@ class Customer_Session:
         '''
         Main function 2: Customer Placing Order
         '''
+        # TODO: bug, when order is place the product qty should decrease
+
         display = Display()
         if len(self.cart) == 0:
             display.add('Your cart is empty.')
@@ -448,7 +450,9 @@ class Customer_Session:
             underline = ['-'*len(s) for s in col_name]
             table.writeLine(col_name)
             table.writeLine(underline)
+            valid_oids = []
             for each in orders:
+                valid_oids.append(str(each[0]))
                 table.writeLine([str(s) for s in each])
             display.add(table)
             display.add('What would you like to do?')
@@ -458,9 +462,88 @@ class Customer_Session:
                 display.show()
                 option = input('> ')
                 if option == '1':
-                    pass
+                    self.see_order_detail(valid_oids, display)
                 elif option == '2':
                     return
+
+    def see_order_detail(self, valid_oids, parent_display):
+        display = Display()
+        while True:
+            parent_display.show()
+            print('Please type the Order ID:')
+            typed_oid = input('> ')
+            if typed_oid in valid_oids:
+                display.refresh()
+                oid = int(typed_oid)
+                self.cursor.execute(
+                        '''
+                        SELECT trackingNo, pickUpTime, dropOffTime
+                        FROM deliveries
+                        WHERE oid = ?;
+                        ''',
+                        (oid, )
+                )
+                deliveries = self.cursor.fetchall()
+
+                self.cursor.execute(
+                        '''
+                        SELECT address
+                        FROM orders
+                        WHERE oid = ?;
+                        ''',
+                        (oid, )
+                )
+                address = self.cursor.fetchall()[0][0]
+                print(address)
+
+                self.cursor.execute(
+                        '''
+                        SELECT olines.sid, stores.name, olines.pid,
+                            products.name, olines.qty,
+                            products.unit, olines.uprice
+                        FROM olines, stores, products
+                        WHERE olines.oid = ?
+                            AND olines.sid = stores.sid
+                            AND olines.pid = products.pid;
+                        ''',
+                        (oid, )
+                )
+                details = self.cursor.fetchall()
+                print(details)
+
+                # Create order detail:
+                order_detail = PrettyTable(4)
+                col_name = ['Tracking Number', 'Pickup Time',
+                        'Dropoff Time', 'Address']
+                underline = ['-'*len(s) for s in col_name]
+                order_detail.writeLine(col_name)
+                order_detail.writeLine(underline)
+                if len(deliveries) == 0:
+                    order_detail.writeLine(
+                            ['N/A', 'N/A', 'N/A', address]
+                    )
+                else:
+                    order_detail.writeLine(
+                            [str(s) for s in list(deliveries[0])] + [address]
+                    )
+                display.add(order_detail)
+
+                product_table = PrettyTable(7)
+                col_name = ['Store ID', 'Store Name', 'Product ID',
+                        'Product Name', 'Quantity', 'Unit', 'Price']
+                underline = ['-'*len(s) for s in col_name]
+                product_table.writeLine(col_name)
+                product_table.writeLine(underline)
+                for line in details:
+                    product_table.writeLine(
+                            [str(s) for s in line]
+                    )
+                display.add(product_table)
+                while True:
+                    display.show()
+                    print('1. Go back')
+                    if input('> ') == '1':
+                        return
 
     def close(self):
         """

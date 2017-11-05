@@ -70,6 +70,7 @@ class PrettyTable:
         self.line = []
         self.header = header
         self.footer = footer
+        self.label = ''
         self.numBlock = numBlock
         self.blockLen = [] # Latest length of each block.
         self.spacing = spacing
@@ -82,6 +83,11 @@ class PrettyTable:
         
     def addFooter(self, footer):
         self.footer = footer
+
+    def addLabel(self, col_name):
+        underline = ['-'*len(s) for s in col_name]
+        self.writeLine(col_name)
+        self.writeLine(underline)
 
     def writeLine(self, line):
         '''
@@ -110,3 +116,10 @@ class PrettyTable:
             output = output + eachLine.__str__() + '\n'
         output = output + self.footer
         return output
+
+if __name__ == '__main__':
+    table = PrettyTable(3)
+    table.addLabel(['Name', 'age', 'Address'])
+    table.writeLine(['abc', '999', 'abc'])
+    table.writeLine(['adf', '123', 'ope'])
+    print(table)

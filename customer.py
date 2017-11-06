@@ -572,7 +572,6 @@ class Customer_Session:
                         (oid, )
                 )
                 address = self.cursor.fetchall()[0][0]
-                print(address)
 
                 # Get detail of each product in the order:
                 self.cursor.execute(
@@ -588,7 +587,6 @@ class Customer_Session:
                         (oid, )
                 )
                 details = self.cursor.fetchall()
-                print(details)
 
                 # Show order detail:
                 order_detail = PrettyTable(4)

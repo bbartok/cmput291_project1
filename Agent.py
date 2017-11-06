@@ -116,7 +116,7 @@ class Agent_Session:
         self.connection.commit()
         print('End setting up this delivery')
         time.sleep(1.2)
-        self.close()
+        self.start_session('1234')
         '''query1 = ('UPDATE deliveries SET pickUpTime=? where oid=?;',self.pickUpTime, self.oid)
                     query2 = ('UPDATE deliveries SET dropOffTime=? where oid=?;',self.dropOffTime, self.oid)
                     self.cursor.execute(query1)
@@ -265,7 +265,7 @@ class Agent_Session:
 
         print('End updating this delivery')
         time.sleep(1.2)
-        self.close()
+        self.start_session('1234')
 
     #---------------------------------------------------------------
     # Function Name : add_to_stock

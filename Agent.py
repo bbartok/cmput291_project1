@@ -328,7 +328,7 @@ class Agent_Session:
 
         else:
             carry_current = (sid_current, pid_current, qty_current)
-            self.cursor.execute('INSERT INTO carries VALUES (?,?,?);', carry_current)
+            self.cursor.execute('INSERT INTO carries VALUES (?,?,?,null);', carry_current)
             print('End adding to stock')
 
     def close(self):

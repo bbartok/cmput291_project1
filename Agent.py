@@ -13,6 +13,7 @@ class Agent_Session:
         self.connection = sqlite3.connect(database)
         self.cursor = self.connection.cursor()
         self.cursor.execute('PRAGMA foreign_keys=ON;')
+        self.trackingNumber_list = list(map(int, range(2000000, 9999999)))
 
 
     def start_session(self, aid):
@@ -20,7 +21,7 @@ class Agent_Session:
         self.aid = aid
         clear_screen()
         print('Agent Session Started.')
-        self.trackingNumber_list = list(map(int, range(2000000, 9999999)))
+        
 
         while True:
             print ('Welcome, {}. What would you like to do today?'.format(aid))
@@ -339,7 +340,7 @@ class Agent_Session:
 
 def test():
     agent_session = Agent_Session()
-    agent_session.start_session('1234')
+    agent_session.start_session()
     agent_session.close()
 
 def clear_screen():

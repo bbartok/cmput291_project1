@@ -308,8 +308,10 @@ class Agent_Session:
 
         self.cursor.execute('SELECT qty FROM carries WHERE sid=? and pid = ?;', (sid_current,pid_current))
         temp = (self.cursor.fetchone())
-        temp = str(temp)
-        qty_orig = int(temp[2:-3]) #$
+        # temp = str(temp)
+        # qty_orig = int(temp[2:-3]) #$
+        temp = temp[0]
+        qty_orig = int(temp)
 
 
         while True:

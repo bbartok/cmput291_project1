@@ -20,7 +20,7 @@ class Agent_Session:
         self.aid = aid
         clear_screen()
         print('Agent Session Started.')
-        self.trackingNumber_list = list(map(int, range(1000000, 9999999)))
+        self.trackingNumber_list = list(map(int, range(2000000, 9999999)))
 
         while True:
             print ('Welcome, {}. What would you like to do today?'.format(aid))

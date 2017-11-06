@@ -306,12 +306,20 @@ class Agent_Session:
             time.sleep(1.2)
             self.start_session(self.aid)
 
+        self.cursor.execute('SELECT qty FROM carries WHERE sid=? and pid = ?;', (sid_current,pid_current))
+        temp = (self.cursor.fetchone())
+        temp = str(temp)
+        qty_orig = int(temp[2:-3]) #$
+
+
         while True:
             try:
                 qty_current = int(input('Please input the number of products to be added to the stock: '))
                 break
             except ValueError:
                 print ('Number is not Valid')
+
+        qty_current = qty_orig + qty_current #$
 
         print ('Do you want to change the unit price for this product in stock?')
         choice = input(' Please input Y(yes) / N(no):  ')
@@ -323,6 +331,8 @@ class Agent_Session:
                     break
                 except ValueError:
                     print ('Input is not Valid')
+            qty_current = qty_orig + qty_current #$
+
             carry_current = (qty_current, uprice_current, sid_current, pid_current)
             self.cursor.execute('update carries set qty=?, uprice=? where sid = ? and pid = ?;', carry_current)
             

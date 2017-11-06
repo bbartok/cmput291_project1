@@ -56,21 +56,21 @@ class Agent_Session:
         except ValueError:
             print ('Order number not Valid, will return to main menu after 1.2s')
             time.sleep(1.2)
-            self.start_session('1234')
+            self.start_session(self.aid)
 
         self.cursor.execute('SELECT * FROM orders WHERE oid=?;', (oid,))
         temp = (self.cursor.fetchall())
         if (temp == []):
             print ('Order number not in the database, will return to main menu after 1.2s')
             time.sleep(1.2)
-            self.start_session('1234')
+            self.start_session(self.aid)
 
         self.cursor.execute('SELECT * FROM deliveries WHERE oid=?;', (oid,))
         temp = (self.cursor.fetchall())
         if (temp != []):
             print ('Order number already has a delivery, will return to main menu after 1.2s')
             time.sleep(1.2)
-            self.start_session('1234')
+            self.start_session(self.aid)
 
         print ('Do you want a pick up time in the future?')
         choice = input(' Please input Y(yes) / N(no):  ')
@@ -114,7 +114,7 @@ class Agent_Session:
         self.connection.commit()
         print('End setting up this delivery')
         time.sleep(1.2)
-        self.start_session('1234')
+        self.start_session(self.aid)
         '''query1 = ('UPDATE deliveries SET pickUpTime=? where oid=?;',self.pickUpTime, self.oid)
                     query2 = ('UPDATE deliveries SET dropOffTime=? where oid=?;',self.dropOffTime, self.oid)
                     self.cursor.execute(query1)
@@ -145,7 +145,7 @@ class Agent_Session:
         except ValueError:
             print ('Tracking number not Valid, will return to main menu after 1.2s')
             time.sleep(1.2)
-            self.start_session('1234')
+            self.start_session(self.aid)
 
 
         self.cursor.execute('SELECT trackingno from deliveries WHERE trackingno=?', (trackingno_current,))
@@ -153,7 +153,7 @@ class Agent_Session:
         if (temp == []):
             print ('Tracking number not in the database, will return to main menu after 1.2s')
             time.sleep(1.2)
-            self.start_session('1234')
+            self.start_session(self.aid)
 
 ################################# Display information #########################################
         self.cursor.execute('SELECT * FROM deliveries WHERE trackingno=?;', (trackingno_current,))
@@ -263,7 +263,7 @@ class Agent_Session:
 
         print('End updating this delivery')
         time.sleep(1.2)
-        self.start_session('1234')
+        self.start_session(self.aid)
 
     #---------------------------------------------------------------
     # Function Name : add_to_stock
@@ -289,7 +289,7 @@ class Agent_Session:
         if (temp == []):
             print ('Product number not in the database, will return to main menu after 1.2s')
             time.sleep(1.2)
-            self.start_session('1234')
+            self.start_session(self.aid)
 
         while True:
             try:
@@ -303,7 +303,7 @@ class Agent_Session:
         if (temp == []):
             print ('Store number not in the database, will return to main menu after 1.2s')
             time.sleep(1.2)
-            self.start_session('1234')
+            self.start_session(self.aid)
 
         while True:
             try:
@@ -347,8 +347,3 @@ def clear_screen():
 
 if __name__ == '__main__':
     test()
-
-
-
-
-

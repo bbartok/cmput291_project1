@@ -4,8 +4,6 @@ import time
 import datetime
 import os
 
-connection = None
-cursor = None
 
 class Agent_Session:
 

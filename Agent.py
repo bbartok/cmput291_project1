@@ -9,9 +9,10 @@ cursor = None
 
 class Agent_Session:
 
-    def __init__(self):
+    def __init__(self, database):
         self.aid = None
-        self.connection = sqlite3.connect('database.db')
+        # self.connection = sqlite3.connect('database.db')
+        self.connection = sqlite3.connect(database)
         self.cursor = self.connection.cursor()
         self.cursor.execute('PRAGMA foreign_keys=ON;')
 

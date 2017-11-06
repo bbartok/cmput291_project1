@@ -287,8 +287,6 @@ class Customer_Session:
         '''
         Main function 2: Customer Placing Order
         '''
-        # TODO: bug, when order is place the product qty should decrease
-
         display = Display()
         if len(self.cart) == 0:
             display.add('Your cart is empty.')
@@ -386,6 +384,28 @@ class Customer_Session:
                         max_oid = 0
                     oid = max_oid + 1
 
+                    # Update product qty from stores:
+                    for pid, sid, product_name, store_name, price, qty in self.cart:
+                        self.cursor.execute(
+                                '''
+                                SELECT qty FROM carries
+                                WHERE sid = ?
+                                    AND pid = ?;
+                                ''',
+                                (sid, pid)
+                        )
+                        qty_left = self.cursor.fetchall()[0][0]
+                        self.cursor.execute(
+                                '''
+                                UPDATE carries
+                                SET qty = ?
+                                WHERE sid = ?
+                                    AND pid = ?;
+                                ''',
+                                (qty_left - qty, sid, pid)
+                        )
+                    self.connection.commit()
+
                     # Insert new entry to orders table:
                     self.cursor.execute(
                             '''
@@ -419,6 +439,9 @@ class Customer_Session:
                     return
 
     def list_orders(self):
+        '''
+        Main Function 3: List user orders
+        '''
         display = Display()
         # TODO: BUG, result does not in order
         # TODO: BUG, num of product incorrect
@@ -471,6 +494,9 @@ class Customer_Session:
                 display.refresh()
 
     def see_order_detail(self, valid_oids, parent_display):
+        '''
+        Helper Function
+        '''
         display = Display()
         while True:
             parent_display.show()

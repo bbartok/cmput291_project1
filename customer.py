@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sqlite3
+import re
 from utils import *
 from pretty_table import PrettyTable
 
@@ -22,8 +23,7 @@ class Customer_Session:
         clear_screen()
         print ('Customer session started.')
         while True:
-            # TODO: welcome screen should print customer name rather than cid.
-            print ('Welcome, {}. What would you like to do today?'.format(cid))
+            print ('Welcome, what would you like to do today?')
             print ('1. Search for products')
             print ('2. Place an order')
             print ('3. List orders')
@@ -43,64 +43,81 @@ class Customer_Session:
                 break
             clear_screen()
 
+    def check_keyword(self, keywords):
+        '''
+        Check if keywords contain illegal characters:
+        '''
+        for kwd in keywords:
+            if not re.match('^[A-Za-z0-9_-]*$', kwd):
+                return False
+        return True
+
+    def sql_search_products(self, keywords):
+        '''
+        SQL search product matching given keywords.
+        '''
+        # TODO: bug, result doesn't in ordered
+        self.cursor.execute(
+                'CREATE VIEW search_result AS ' + \
+                'SELECT pid, name, unit, COUNT(name) FROM ( ' + \
+                ' UNION ALL '.join(
+                    'SELECT * FROM products WHERE name LIKE \'%{}%\''.format(kwd) \
+                    for kwd in keywords
+                ) + \
+                ') GROUP BY name ORDER BY COUNT(name) DESC;'
+        )
+        self.cursor.execute(
+                '''
+                SELECT s.pid, s.name, s.unit, COUNT(DISTINCT c1.sid),
+                    COUNT(DISTINCT c2.sid), MIN(c1.uprice),
+                    MIN(c2.uprice)
+                FROM search_result s, carries c1, carries c2
+                WHERE s.pid = c1.pid
+                    AND s.pid = c2.pid
+                    AND c2.qty > 0
+                GROUP BY s.pid;
+                '''
+        )
+        product_detail = self.cursor.fetchall()
+        self.cursor.execute(
+                '''
+                SELECT s.pid, COUNT(DISTINCT ol.oid)
+                FROM search_result s, orders od, olines ol
+                WHERE s.pid = ol.pid
+                    AND ol.oid = od.oid
+                    AND od.odate >= (SELECT DATE('now', '-7 day'))
+                GROUP BY s.pid;
+                '''
+        )
+        product_orders = self.cursor.fetchall()
+        self.cursor.execute(
+                '''
+                DROP VIEW search_result;
+                '''
+        )
+        return product_detail, product_orders
+
     def search_for_products(self):
         '''
         Main function 1: Customer can search for products
         '''
         display = Display()
+        err_msg = False
         while True:
             clear_screen()
             print('Please enter keywords:')
+            if err_msg:
+                print('Error: illegal character found in keywords')
+                err_msg = False
             search_input = input('> ')
             if search_input != '':
                 keywords = search_input.strip().split()
+                if not self.check_keyword(keywords):
+                    err_msg = True
+                    continue
 
-                # Check if keywords contain illegal characters:
-                # TODO: BUG, keyword cannot contains special characters
-                for kwd in keywords:
-                    if not kwd.isalpha():
-                        print('Error: illegal character found in keywords')
-                        continue
-
-                # TODO: bug, result doesn't in ordered
-                self.cursor.execute(
-                        'CREATE VIEW search_result AS ' + \
-                        'SELECT pid, name, unit, COUNT(name) FROM ( ' + \
-                        ' UNION ALL '.join(
-                            'SELECT * FROM products WHERE name LIKE \'%{}%\''.format(kwd) \
-                            for kwd in keywords
-                        ) + \
-                        ') GROUP BY name ORDER BY COUNT(name) DESC;'
-                )
-                self.cursor.execute(
-                        '''
-                        SELECT s.pid, s.name, s.unit, COUNT(DISTINCT c1.sid),
-                            COUNT(DISTINCT c2.sid), MIN(c1.uprice),
-                            MIN(c2.uprice)
-                        FROM search_result s, carries c1, carries c2
-                        WHERE s.pid = c1.pid
-                            AND s.pid = c2.pid
-                            AND c2.qty > 0
-                        GROUP BY s.pid;
-                        '''
-                )
-                product_detail = self.cursor.fetchall()
-                self.cursor.execute(
-                        '''
-                        SELECT s.pid, COUNT(DISTINCT ol.oid)
-                        FROM search_result s, orders od, olines ol
-                        WHERE s.pid = ol.pid
-                            AND ol.oid = od.oid
-                            AND od.odate >= (SELECT DATE('now', '-7 day'))
-                        GROUP BY s.pid;
-                        '''
-                )
-                product_orders = self.cursor.fetchall()
-                self.cursor.execute(
-                        '''
-                        DROP VIEW search_result;
-                        '''
-                )
+                product_detail, product_orders = self.sql_search_products(
+                        keywords)
 
                 page_view = PageView(product_detail, self.per_page)
                 while True:
@@ -443,11 +460,12 @@ class Customer_Session:
         Main Function 3: List user orders
         '''
         display = Display()
-        # TODO: BUG, result does not in order
-        # TODO: BUG, num of product incorrect
+
+        # Get all orders for given customer:
         self.cursor.execute(
                 '''
-                SELECT orders.oid, odate, COUNT(pid), SUM(uprice * qty)
+                --SELECT orders.oid, odate, COUNT(pid), SUM(uprice * qty)
+                SELECT orders.oid, odate, SUM(qty), SUM(uprice * qty)
                 FROM orders, olines
                 WHERE orders.oid = olines.oid
                     AND cid = ?
@@ -457,8 +475,16 @@ class Customer_Session:
                 (self.cid, )
                 )
         orders = self.cursor.fetchall()
+
+        # The order is already sorted by date, now we want to additionally
+        # sort by reversed oid so the most recent order within the same day
+        # comes first.
+        orders = sorted(orders, key=lambda x: x[0], reverse=True) 
+
+        # Divide orders into pages:
         page_view = PageView(orders, self.per_page)
 
+        # No order found:
         if len(orders) == 0:
             display.add('You don\'t have any order.')
             display.add('1. Go back')
@@ -467,6 +493,7 @@ class Customer_Session:
                 if input('> ') == '1':
                     return
 
+        # Show orders:
         else:
             while True:
                 table = PrettyTable(4)

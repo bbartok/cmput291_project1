@@ -11,6 +11,7 @@ class Customer_Session:
         self.connection = sqlite3.connect(database)
         self.cursor = self.connection.cursor()
         self.cursor.execute('PRAGMA foreign_keys=ON;')
+        self.per_page = 5 # num of rows per page
 
     def start_session(self, cid):
         """
@@ -21,6 +22,7 @@ class Customer_Session:
         clear_screen()
         print ('Customer session started.')
         while True:
+            # TODO: welcome screen should print customer name rather than cid.
             print ('Welcome, {}. What would you like to do today?'.format(cid))
             print ('1. Search for products')
             print ('2. Place an order')
@@ -100,32 +102,34 @@ class Customer_Session:
                         '''
                 )
 
-                # TODO: if result contains more than 5 lines...
-                table = PrettyTable(8)
-                table.addLabel(['Product ID', 'Product Name', 'Unit',
-                        'Num. of Stores Carry', 'Num. of Stores In Stock',
-                        'Min. Price Carry', 'Min. Price In Stock',
-                        'Num. of Orders Past 7 Days'])
-
-                # Product a table to show the result:
-                products = []
-                for row in product_detail:
-                    row = list(row)
-                    pid = row[0]
-                    norder = 0
-                    for line in product_orders:
-                        if line[0] == pid:
-                            norder = line[1]
-                    row.append(norder)
-                    products.append(row)
-                    table.writeLine([str(r) for r in row])
-                display.add(table)
-
+                page_view = PageView(product_detail, self.per_page)
                 while True:
+                    table = PrettyTable(8)
+                    table.addLabel(['Product ID', 'Product Name', 'Unit',
+                            'Num. of Stores Carry', 'Num. of Stores In Stock',
+                            'Min. Price Carry', 'Min. Price In Stock',
+                            'Num. of Orders Past 7 Days'])
+
+                    # Product a table to show the result:
+                    products = []
+                    for row in page_view.get_view():
+                        row = list(row)
+                        pid = row[0]
+                        norder = 0
+                        for line in product_orders:
+                            if line[0] == pid:
+                                norder = line[1]
+                        row.append(norder)
+                        products.append(row)
+                        table.writeLine([str(r) for r in row])
+                    display.add(table)
+
                     display.show()
                     print('What would you like to do next?')
                     print('1. See product details')
                     print('2. Go back')
+                    print('3. Next page')
+                    print('4. Previous Page')
                     option = input('> ')
                     if option == '1':
                         available_pids = [str(p) for p in list(zip(*products))[0]]
@@ -139,6 +143,11 @@ class Customer_Session:
                                 self.see_product_details(selection)
                     elif option == '2':
                         break
+                    elif option == '3':
+                        page_view.next_page()
+                    elif option == '4':
+                        page_view.prev_page()
+                    display.refresh()
 
                 break
 
@@ -306,10 +315,10 @@ class Customer_Session:
                 while qty > qty_left:
                     display.add(
                             'The following item(s) cannot be ordered:'
-                            )
+                    )
                     display.add(
                             '{} from {}'.format(product_name, store_name)
-                            )
+                    )
                     display.add(
                             'You have added {} item(s), but there is only {} left. Please adjust the quantity.'.format(qty, qty_left)
                     )
@@ -336,7 +345,7 @@ class Customer_Session:
             display.refresh()
             display.add(
                     'Looks good! Please confirm your order:'
-                    )
+            )
 
             # Generate a summary table:
             summary = PrettyTable(4)
@@ -363,7 +372,7 @@ class Customer_Session:
                             WHERE cid = ?;
                             ''',
                             (self.cid, )
-                            )
+                    )
                     addr = self.cursor.fetchall()[0][0]
 
                     # Generate new oid:
@@ -371,7 +380,7 @@ class Customer_Session:
                             '''
                             SELECT MAX(oid) FROM orders;
                             '''
-                            )
+                    )
                     max_oid = self.cursor.fetchall()[0][0]
                     if max_oid is None:
                         max_oid = 0
@@ -383,7 +392,7 @@ class Customer_Session:
                             INSERT INTO orders VALUES (?, ?, DATE(\'now\'), ?);
                             ''',
                             (oid, self.cid, addr)
-                            )
+                    )
 
                     # Insert new entries to olines table:
                     for cart_item in self.cart:
@@ -393,7 +402,7 @@ class Customer_Session:
                                 INSERT INTO olines VALUES (?, ?, ?, ?, ?);
                                 ''',
                                 (oid, sid, pid, qty, price)
-                                )
+                        )
 
                     self.connection.commit()
                     self.cart = []
@@ -412,6 +421,7 @@ class Customer_Session:
     def list_orders(self):
         display = Display()
         # TODO: BUG, result does not in order
+        # TODO: BUG, num of product incorrect
         self.cursor.execute(
                 '''
                 SELECT orders.oid, odate, COUNT(pid), SUM(uprice * qty)
@@ -424,34 +434,41 @@ class Customer_Session:
                 (self.cid, )
                 )
         orders = self.cursor.fetchall()
+        page_view = PageView(orders, self.per_page)
 
         if len(orders) == 0:
             display.add('You don\'t have any order.')
-            diaplay.add('1. Go back')
+            display.add('1. Go back')
             while True:
                 display.show()
                 if input('> ') == '1':
                     return
 
         else:
-            # TODO: more than 5 results...
-            table = PrettyTable(4)
-            table.addLabel(['Order ID', 'Order Date', 'Num. of Products', 'Total Price'])
-            valid_oids = []
-            for each in orders:
-                valid_oids.append(str(each[0]))
-                table.writeLine([str(s) for s in each])
-            display.add(table)
-            display.add('What would you like to do?')
-            display.add('1. See order detail')
-            display.add('2. Go back')
             while True:
+                table = PrettyTable(4)
+                table.addLabel(['Order ID', 'Order Date', 'Num. of Products', 'Total Price'])
+                valid_oids = []
+                for each in page_view.get_view():
+                    valid_oids.append(str(each[0]))
+                    table.writeLine([str(s) for s in each])
+                display.add(table)
+                display.add('What would you like to do?')
+                display.add('1. See order detail')
+                display.add('2. Go back')
+                display.add('3. Next page')
+                display.add('4. Previous page')
                 display.show()
                 option = input('> ')
                 if option == '1':
                     self.see_order_detail(valid_oids, display)
                 elif option == '2':
                     return
+                elif option == '3':
+                    page_view.next_page()
+                elif option == '4':
+                    page_view.prev_page()
+                display.refresh()
 
     def see_order_detail(self, valid_oids, parent_display):
         display = Display()

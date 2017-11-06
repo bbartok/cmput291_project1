@@ -323,12 +323,12 @@ class Agent_Session:
                     break
                 except ValueError:
                     print ('Input is not Valid')
-            carry_current = (sid_current, pid_current, qty_current, uprice_current)
-            self.cursor.execute('INSERT INTO carries VALUES (?,?,?,?);', carry_current)
-
+            carry_current = (qty_current, uprice_current, sid_current, pid_current)
+            self.cursor.execute('update carries set qty=?, uprice=? where sid = ? and pid = ?;', carry_current)
+            
         else:
-            carry_current = (sid_current, pid_current, qty_current)
-            self.cursor.execute('INSERT INTO carries VALUES (?,?,?,null);', carry_current)
+            carry_current = (qty_current, sid_current, pid_current)
+            self.cursor.execute('update carries set qty=? where sid = ? and pid = ?;', carry_current)
             print('End adding to stock')
 
     def close(self):
